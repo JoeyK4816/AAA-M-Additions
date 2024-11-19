@@ -1,0 +1,4 @@
+add a frame that prevents release
+
+makes you type the name of someone still alive in order to release
+

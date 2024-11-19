@@ -1,0 +1,27 @@
+## Interface: 110007
+## Title: AAA M+ Additions
+## Notes: A simple addon to track every single timed run you complete across all characters.
+## Author: Joeyk4816
+## Version: 1.0.1
+## SavedVariables: runsDB, AAASettings, runID, partyMembers, partyMemberDeaths
+## OptionalDeps: LibDataBroker-1.1, LibDBIcon-1.0
+
+#@no-lib-strip@
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs/LibDataBroker-1.1/LibDataBroker-1.1.lua
+Libs/LibDBIcon-1.0/LibDBIcon-1.0.lua
+#@end-no-lib-strip@
+
+Init.lua
+
+Functions.lua
+Settings.lua
+Modals/Main.lua
+Modals/Popup.lua
+Modals/AddRun.lua
+Modals/ViewRun.lua
+Commands.lua
+MinimapIcon.lua
+
+Main.lua
