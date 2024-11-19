@@ -85,7 +85,7 @@ function ViewRunModal.Create(parentFrame, addItemCallback, runID)
         modalFrame.details = modalFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         modalFrame.details:SetPoint("TOPLEFT", modalFrame, "TOPLEFT", 10, -40)
         modalFrame.details:SetJustifyH("LEFT")
-        modalFrame.details:SetWidth(500) -- Ensure text wraps within the modal width
+        modalFrame.details:SetWidth(500 ) -- Ensure text wraps within the modal width
         modalFrame.details:SetText(detailsText)
     else
         -- Handle case where no run data is found

@@ -142,29 +142,33 @@ function frame:OnEvent (event, arg1)
         local _, subevent, _, _, sourceName, _, _, _, destName, _, _, amount, spellName, spellSchool, spellAmount = CombatLogGetCurrentEventInfo()
 
         if subevent == "UNIT_DIED" then
-            local formattedTime, timeElapsed, type = GetWorldElapsedTime(1)
-            if timeElapsed then
-                local hours = math.floor(timeElapsed / 3600)
-                local minutes = math.floor((timeElapsed % 3600) / 60)
-                local seconds = timeElapsed % 60
-                formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
-            end
+            for name in pairs(partyMembers) do
+                if destName == name then
+                    local formattedTime, timeElapsed, type = GetWorldElapsedTime(1)
+                    if timeElapsed then
+                        local hours = math.floor(timeElapsed / 3600)
+                        local minutes = math.floor((timeElapsed % 3600) / 60)
+                        local seconds = timeElapsed % 60
+                        formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                    end
 
-            if killerDamage[destName] then
-                print("AAA: Death log for " .. (destName or "Unknown") .. ":")
-                for _, combatLog in ipairs(killerDamage[destName]) do
-                    print(combatLog.message)
+                    if killerDamage[destName] then
+                        print("AAA: Death log for " .. (destName or "Unknown") .. ":")
+                        for _, combatLog in ipairs(killerDamage[destName]) do
+                            print(combatLog.message)
+                        end
+            
+                        table.insert(partyMemberDeaths, {
+                            time = formattedTime,
+                            player = destName,
+                            log = killerDamage[destName]
+                        })
+
+                        killerDamage[destName] = nil
+                    else
+                        print("AAA: No recorded damage for " .. (destName or "Unknown") .. ".")
+                    end
                 end
-    
-                table.insert(partyMemberDeaths, {
-                    time = formattedTime,
-                    player = destName,
-                    log = killerDamage[destName]
-                })
-
-                killerDamage[destName] = nil
-            else
-                print("AAA: No recorded damage for " .. (destName or "Unknown") .. ".")
             end
         end
 
