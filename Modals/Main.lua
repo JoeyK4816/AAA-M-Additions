@@ -123,7 +123,7 @@ function MainModal.updateList()
         local name = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         local dungeonName = GetDungeonNameByMapID(item.dungeonName)
         name:SetText(dungeonName)
-        name:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 10, -20 - (i - 1) * 30)
+        name:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 0, -20 - (i - 1) * 30)
         table.insert(row, name)
 
         -- Time column
@@ -161,6 +161,32 @@ function MainModal.updateList()
             MainModal.updateList()
         end)
         table.insert(row, deleteButton)
+
+        if MainModal.currentTab == "Started" then
+            -- End button
+            local abandonButton = CreateFrame("Button", nil, listFrame, "UIPanelButtonTemplate")
+            abandonButton:SetSize(50, 20)
+            abandonButton:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 510, -17 - (i - 1) * 30)
+            abandonButton:SetText("Abandon")
+            abandonButton:SetScript("OnClick", function()
+                local status = "incomplete"
+                local formattedTime = "00:00:00"
+                local note = "Manually abandoned via button press."
+
+                local unknown, timeElapsed, type = GetWorldElapsedTime(1)
+                if timeElapsed then
+                    local hours = math.floor(timeElapsed / 3600)
+                    local minutes = math.floor((timeElapsed % 3600) / 60)
+                    local seconds = timeElapsed % 60
+                    formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                end
+        
+                abandonRun( status, formattedTime, note )
+
+                MainModal.updateList()
+            end)
+            table.insert(row, abandonButton)
+        end
 
         -- Store the row
         table.insert(listFrame.rows, row)

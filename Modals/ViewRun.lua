@@ -1,6 +1,6 @@
 function ViewRunModal.Create(parentFrame, addItemCallback, runID)
     local modalFrame = CreateFrame("Frame", "AAA_AddRunModal", UIParent, "BasicFrameTemplateWithInset")
-    modalFrame:SetSize(300, 300)
+    modalFrame:SetSize(550, 400)
     modalFrame:SetPoint("CENTER", UIParent, "CENTER")
     modalFrame:SetFrameStrata("DIALOG") -- Ensure it renders above other frames
     modalFrame:SetFrameLevel(100) -- Set a high level to be above child elements
@@ -15,20 +15,23 @@ function ViewRunModal.Create(parentFrame, addItemCallback, runID)
 
     if run then
         -- Display the retrieved run data
+        local headerColor = "|cffFFD700"  -- Gold color
+        local resetColor = "|r"  -- Resets to default text color
         local detailsText = ""
         local dungeonName = GetDungeonNameByMapID(run.dungeonName)
-        detailsText = detailsText .. "Dungeon: " .. (dungeonName or "Unknown") .. "\n"
-        detailsText = detailsText .. "Character: " .. (run.character or "Unknown") .. "\n"
-        detailsText = detailsText .. "Spec: " .. (run.spec or "Unknown") .. "\n"
-        detailsText = detailsText .. "Time: " .. (run.currentTimer or "Unknown") .. "\n"
-        detailsText = detailsText .. "Date: " .. (run.runDate or "Unknown") .. "\n"
-        detailsText = detailsText .. "Role: " .. (run.role or "Unknown") .. "\n"
-        detailsText = detailsText .. "Level: " .. (run.level or "Unknown") .. "\n"
-        detailsText = detailsText .. "Status: " .. (run.status or "Unknown") .. "\n"
-        detailsText = detailsText .. "Season: " .. (run.season or "Unknown") .. "\n"
-        detailsText = detailsText .. "Affixes: " .. (GetAffixNamesFromString(run.affixes) or "Unknown") .. "\n"
-        
-        detailsText = detailsText .. "Party:\n"
+
+        detailsText = detailsText .. headerColor .. "Dungeon: " .. resetColor .. (dungeonName or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Character: " .. resetColor .. (run.character or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Spec: " .. resetColor .. (run.spec or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Time: " .. resetColor .. (run.currentTimer or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Date: " .. resetColor .. (run.runDate or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Role: " .. resetColor .. (run.role or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Level: " .. resetColor .. (run.level or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Status: " .. resetColor .. (run.status or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Season: " .. resetColor .. (run.season or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Affixes:\n" .. resetColor .. (GetAffixNamesFromString(run.affixes) or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Notes:\n" .. resetColor .. (run.note or "Unknown") .. "\n"
+        detailsText = detailsText .. headerColor .. "Party:\n" .. resetColor 
         if run.party and next(run.party) then
             for name, member in pairs(run.party) do
                 detailsText = detailsText ..
@@ -44,28 +47,45 @@ function ViewRunModal.Create(parentFrame, addItemCallback, runID)
             detailsText = detailsText .. "  No party data available\n"
         end
 
-        detailsText = detailsText .. "Deaths:\n"
+        detailsText = detailsText .. headerColor ..  "Deaths:\n" .. resetColor
         if run.deaths and next(run.deaths) then
-            for name, member in pairs(run.deaths) do
+            for name, death in pairs(run.deaths) do
+                -- Get the last log entry if available
+                local lastLogEntry = nil
+                if death.log and #death.log > 0 then
+                    lastLogEntry = death.log[#death.log]
+                end
+                
+                -- Format the death log details
+                local logDetails = ""
+                if lastLogEntry then
+                    logDetails = string.format(
+                        "killed by %s%s|r using %s%s|r for %s%s|r damage",
+                        "|cffFFA500", lastLogEntry.killer or "Unknown killer",  -- Orange
+                        "|cff0000FF", lastLogEntry.damageType or "Unknown damage type",  -- Blue
+                        "|cffFF0000", lastLogEntry.amount or "Unknown amount"  -- Red
+                    )
+                else
+                    logDetails = "No log data available"
+                end
+                
+                -- Add the death details to the text
                 detailsText = detailsText ..
                     string.format(
-                        "  - %s: %s (%s, %s)\n",
-                        name,
-                        member.class or "Unknown Class",
-                        member.role or "Unknown Role",
-                        member.spec or "Unknown Spec"
+                        "%s%s|r - %s%s|r: %s\n",
+                        "|cffFFFF00", death.time or "Unknown time",  -- Yellow
+                        "|cff00FF00", death.player or "Unknown player",  -- Green
+                        logDetails
                     )
             end
         else
             detailsText = detailsText .. "  No death data available\n"
         end
 
-        detailsText = detailsText .. "Note: " .. (run.note or "Unknown") .. "\n"
-
         modalFrame.details = modalFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         modalFrame.details:SetPoint("TOPLEFT", modalFrame, "TOPLEFT", 10, -40)
         modalFrame.details:SetJustifyH("LEFT")
-        modalFrame.details:SetWidth(280) -- Ensure text wraps within the modal width
+        modalFrame.details:SetWidth(500) -- Ensure text wraps within the modal width
         modalFrame.details:SetText(detailsText)
     else
         -- Handle case where no run data is found

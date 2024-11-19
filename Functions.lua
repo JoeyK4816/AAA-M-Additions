@@ -117,16 +117,13 @@ function CheckGroupStatus()
 end
 
 function PrintTable(t, indent)
-
     if type(t) ~= "table" then
         print("Not a table:", tostring(t))
         return
     end
 
-
     indent = indent or 0
     local indentStr = string.rep("  ", indent) -- Indentation for readability
-
 
     for key, value in pairs(t) do
         local valueType = type(value)
@@ -137,8 +134,6 @@ function PrintTable(t, indent)
             print(indentStr .. tostring(key) .. ": " .. tostring(value))
         end
     end
-
-
 end
 
 function GetRunByID(runID)
@@ -228,7 +223,7 @@ function GetAffixNamesFromString(affixString)
         end
     end
 
-    return table.concat(affixNames, ", ")
+    return table.concat(affixNames, ",\n")
 end
 
 function GetPlayerRoleFromSpec()
@@ -250,52 +245,139 @@ function GetPlayerRoleFromSpec()
     return role
 end
 
-function OnPlayerDeathEvent()
-    local formattedTime, timeElapsed, type = GetWorldElapsedTime(1)
-
-    if timeElapsed then
-        -- Calculate hours, minutes, and seconds
-        local hours = math.floor(timeElapsed / 3600)
-        local minutes = math.floor((timeElapsed % 3600) / 60)
-        local seconds = timeElapsed % 60
-    
-        -- Format the string as hh:mm:ss
-        formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
-    end
-
-    -- Send the chat message
-    local overkillText = overkill and overkill > 0 and (" (Overkill: " .. overkill .. ")") or ""
-    local message = string.format(
-        "%s was killed by %s (SpellID: %s) for %d damage%s.",
-        destName or "Unknown",
-        sourceName or "Unknown",
-        spellID or "Unknown",
-        amount or 0,
-        overkillText
-    )
-    print("overkillText")
-    print(overkillText)
-
-    -- Print the message in chat
-    -- SendChatMessage(message, "PARTY")
-    
-    table.insert(partyMemberDeaths, {
-        time = formattedTime,
-        player = destName,
-        overkill = overkillText,
-        source = sourceName,
-        spell = spellID,
-        amount = amount,
-    })
-
-    print( "partyMemberDeaths: " )
-    PrintTable(partyMemberDeaths)
-end
-
 function OnDungeonResetEvent(self, event, ...)
     if event == "INSTANCE_RESET_FAILED" then
         SendChatMessage("Dungeon reset failed.", "PARTY")
     elseif event == "INSTANCE_RESET_SUCCESS" then
         SendChatMessage("Dungeon reset successful.", "PARTY")
     end
+end
+
+function addRun(dungName, level, status, affixes, time, runDate, spec, character, role, party, deaths, note)
+    if not dungName or not level or not affixes then
+        -- Get current dungeon information from the player's keystone
+        local mapID = C_ChallengeMode.GetActiveChallengeMapID()
+        
+        local keyLevel, keystoneAffixes, keystoneDungeonID = C_ChallengeMode.GetActiveKeystoneInfo()
+        if mapID then
+            dungName = mapID
+            level = keyLevel
+            affixes = table.concat(keystoneAffixes, ", ") -- Assuming you have a function to get current affixes
+        end
+    end
+
+    if not time then
+        time = "00:00:00.00"
+    end
+
+    if not runDate then
+        runDate = date("%Y-%m-%d %H:%M:%S")  -- Use os.date() to format the current date and time
+    end
+
+    if not status then
+        status = "started"
+    end
+
+    if not season then
+        season = GetCurrentSeason()
+    end
+
+    if not role then
+        role = GetPlayerRoleFromSpec()
+    end
+
+    if not character then
+        local playerName, playerRealm = UnitName("player")
+        character = playerRealm and (playerName .. "-" .. playerRealm) or playerName
+    end
+
+    if not spec then
+        -- print("no godamn spec")
+        local specName = GetPlayerSpecName()
+        spec = specName
+        -- print(spec)
+    else
+        -- print(spec)
+        local specName = spec and select(2, GetSpecializationInfo(spec)) or "i make this shit up as i go"
+        spec = specName
+        -- print(spec)
+    end
+    
+    if not party then
+        party = GetPartyMemberSpecs()
+    end
+
+    if not note then
+        note = "New key started!"
+    end
+
+    table.insert(runsDB, {
+        spec = spec,
+        id = runID,
+        dungeonName = dungName,
+        currentTimer = time,
+        runDate = runDate,
+        level = level,
+        affixes = affixes,
+        status = status,
+        party = party,
+        deaths = {},
+        character = character,
+        role = role,
+        season = season,
+        note = note
+    })
+
+    runID = runID + 1
+    activeRunID = runID
+
+    MainModal.sortItems()
+    MainModal.updateList()
+end
+
+function abandonRun(status, timeElapsed, note)
+    -- Ensure runID is available and valid
+    if not runID then
+        print("Error: runID is not set.")
+        return
+    end
+
+    -- Find the run by runID in runsDB
+    for _, run in ipairs(runsDB) do
+        if run.id == ( runID - 1 ) then
+            if not note then
+                note = run.note
+            else
+                note = run.note .. "\n" ..note
+            end
+            if not timeElapsed then
+                local runTimestamp = time({ year = tonumber(run.runDate:sub(1, 4)), 
+                                            month = tonumber(run.runDate:sub(6, 7)), 
+                                            day = tonumber(run.runDate:sub(9, 10)), 
+                                            hour = tonumber(run.runDate:sub(12, 13)), 
+                                            min = tonumber(run.runDate:sub(15, 16)), 
+                                            sec = tonumber(run.runDate:sub(18, 19)) })
+                local currentTimestamp = time()
+                local diffSeconds = currentTimestamp - runTimestamp
+            
+                local hours = math.floor(diffSeconds / 3600)
+                local minutes = math.floor((diffSeconds % 3600) / 60)
+                local seconds = diffSeconds % 60
+            
+                timeElapsed = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+            end
+            -- Update the relevant fields
+            run.status = status or run.status
+            run.currentTimer = timeElapsed or run.currentTimer
+            run.note = note or run.note
+            run.deaths = partyMemberDeaths or run.deaths
+            print("Run updated successfully.")
+            partyMemberDeaths = {}
+            activeRunID = nil
+            return
+        end
+    end
+
+    -- If no run with the given ID was found
+    print("Error: No run found with runID:", runID)
 end
