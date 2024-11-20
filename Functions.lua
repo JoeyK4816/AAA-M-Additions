@@ -381,12 +381,8 @@ function updateRun(status, timeElapsed, note)
                                             sec = tonumber(run.runDate:sub(18, 19)) })
                 local currentTimestamp = time()
                 local diffSeconds = currentTimestamp - runTimestamp
-            
-                local hours = math.floor(diffSeconds / 3600)
-                local minutes = math.floor((diffSeconds % 3600) / 60)
-                local seconds = diffSeconds % 60
-            
-                timeElapsed = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                
+                timeElapsed = convertSecondsToString( diffSeconds )
             end
             -- Update the relevant fields
             run.status = status or run.status
@@ -411,4 +407,27 @@ function isPartyUnit(unitName)
         end
     end
     return false
+end
+
+
+function removeRun(removeID)
+    -- Ensure runID is available and valid
+    if not removeID then
+        print("AAA: Error: removeID is not set.")
+        return
+    end
+
+    -- Find the run by runID in runsDB
+    for _, run in ipairs(runsDB) do
+        if run.id == removeID then
+        end
+    end
+end
+
+function convertSecondsToString( timeInSeconds )
+    local hours = math.floor(timeInSeconds / 3600)
+    local minutes = math.floor((timeInSeconds % 3600) / 60)
+    local seconds = timeInSeconds % 60
+    local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+    return formattedTime
 end

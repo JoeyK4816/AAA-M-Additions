@@ -42,65 +42,26 @@ function frame:OnEvent (event, arg1)
         Settings.RegisterAddOnCategory(category)
     end
 
-    if event == "PLAYER_ENTERING_WORLD" then
-        if not C_ChallengeMode.IsChallengeModeActive() then
-            if activeRunID and activeRunID > 0 then
-                -- print("AAA: Automatically abandoned key")
-                updateRun("incomplete", _, "Automatically abandoned")
-            end
-        end
-        -- this was to ensure there was always an entry to revie
-        -- local rowCount = #runsDB
-        -- if rowCount == 0 then
-        --     print("AAA: No existing runs were loaded.")
-            
-        --     local playerName, playerRealm = UnitName("player")
-        --     local character = playerRealm and (playerName .. "-" .. playerRealm) or playerName
-        --     local specName = GetPlayerSpecName()
-
-        --     runsDB = {
-        --         {
-        --             id = runID,
-        --             dungeonName = 353,
-        --             currentTimer = "00:59:59.99",
-        --             runDate = date("%Y-%m-%d %H:%M:%S"),
-        --             level = "2",
-        --             affixes = "147",
-        --             status = "incomplete",
-        --             season = GetCurrentSeason() or 0,
-        --             party = GetPartyMemberSpecs(),
-        --             deaths = partyMemberDeaths,
-        --             role = GetPlayerRoleFromSpec(),
-        --             character = character,
-        --             spec = specName,
-        --             note = "Testing"
-        --         },
-        --     }
-        --     runID = runID + 1
-        -- end
-    end
-
     if event == "GROUP_ROSTER_UPDATE" and partyMembers then
+        if not C_ChallengeMode.IsChallengeModeActive() then
+            return
+        end
+
         if not activeRunID then
             return
+        end
+        
+        if not AAASettings["TrackIncomplete"] then
+            removeRun(activeRunID)
         end
 
         local status = "incomplete"
         local note = ""
         local formattedTime = nil
+        local unknown, timeElapsed, type = GetWorldElapsedTime(1)
         
-        if C_ChallengeMode.IsChallengeModeActive() then
-            local unknown, timeElapsed, type = GetWorldElapsedTime(1)
-            
-            if timeElapsed then
-                -- Calculate hours, minutes, and seconds
-                local hours = math.floor(timeElapsed / 3600)
-                local minutes = math.floor((timeElapsed % 3600) / 60)
-                local seconds = timeElapsed % 60
-            
-                -- Format the string as hh:mm:ss
-                formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
-            end
+        if timeElapsed then
+            formattedTime = convertSecondsToString(timeElapsed)
         end
 
         local currentPartyMembers = GetCurrentPartyMembers()
@@ -111,7 +72,7 @@ function frame:OnEvent (event, arg1)
                 note = string.format("%s has left the party.", name)
             end
         end
-
+        
         updateRun( status, formattedTime, note )
     end
 
@@ -130,23 +91,28 @@ function frame:OnEvent (event, arg1)
     end
 
     if event == "CHALLENGE_MODE_COMPLETED" then
+        if not activeRunID then
+            return
+        end
+
         -- Retrieve details about the completed dungeon
         local mapID, level, timeElapsed, onTime, keystoneUpgradeLevels = C_ChallengeMode.GetCompletionInfo()
 
         -- Get dungeon name
         local dungeonName = C_ChallengeMode.GetMapUIInfo(mapID)
 
+        if AAASettings["OnlyTrackTimed"] and not onTime then
+            removeRun(activeRunID)
+            return
+        end
+
         -- Determine result
         local result = onTime and "on time!" or "but not on time."
-
-        local hours = math.floor(timeElapsed / 3600)
-        local minutes = math.floor((timeElapsed % 3600) / 60)
-        local seconds = timeElapsed % 60
-        local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+        local formattedTime = convertSecondsToString( timeElapsed )
 
         -- Construct chat message
         local message = string.format(
-            "Congratulations! You completed %s (Level %d) in %s seconds %s",
+            "AAA: %s (Level %d) completed in %s %s",
             dungeonName, level, formattedTime, result
         )
 
@@ -165,10 +131,11 @@ function frame:OnEvent (event, arg1)
         if not C_ChallengeMode.IsChallengeModeActive() then
             return
         end
+        if not activeRunID then
+            return
+        end
 
         local _, subevent, _, _, sourceName, _, _, _, destName, _, _, amount, spellName, spellSchool, spellAmount = CombatLogGetCurrentEventInfo()
-        
-
 
         if subevent == "UNIT_DIED" then
             if AAASettings["HideDeathMessage"] == true then
@@ -183,10 +150,7 @@ function frame:OnEvent (event, arg1)
 
             local formattedTime, timeElapsed, type = GetWorldElapsedTime(1)
             if timeElapsed then
-                local hours = math.floor(timeElapsed / 3600)
-                local minutes = math.floor((timeElapsed % 3600) / 60)
-                local seconds = timeElapsed % 60
-                formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                formattedTime = convertSecondsToString( timeElapsed )
             end
 
             if killerDamage[destName] then
@@ -268,6 +232,4 @@ end
 if not AAASettings then
     AAASettings = {}
     print("AAA: No existing Settings were loaded.")
-else
-    -- print("AAASettings loaded with OnlyTrackMine:" .. tostring(AAASettings["OnlyTrackMine"]) .. " status.")
 end

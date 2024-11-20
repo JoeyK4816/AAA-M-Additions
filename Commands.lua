@@ -23,23 +23,6 @@ end
 
 SLASH_DDD1 = "/ddd"
 SlashCmdList["DDD"] = function(msg)
-    if not C_ChallengeMode.IsChallengeModeActive() then
-        return
-    end
-
-    local unknown, timeElapsed, formattedTime = GetWorldElapsedTime(1)
-    local status = "incomplete"
-    local note = "\nmanually ended with ddd"
-    
-    if timeElapsed then
-        -- Calculate hours, minutes, and seconds
-        local hours = math.floor(timeElapsed / 3600)
-        local minutes = math.floor((timeElapsed % 3600) / 60)
-        local seconds = timeElapsed % 60
-    
-        -- Format the string as hh:mm:ss
-        formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
-    end
-
-    updateRun( status, formattedTime, note )
+    local st = GetPartyMemberSpecs()
+    PrintTable( st )
 end

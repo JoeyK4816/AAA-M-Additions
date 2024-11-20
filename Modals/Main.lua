@@ -4,6 +4,7 @@ function MainModal.Create()
     -- Create the main frame
     frame:SetSize(600, 600) -- Adjusted height for tabs
     frame:SetPoint("CENTER", UIParent, "CENTER") -- Position in the center of the screen
+    frame:SetFrameStrata("DIALOG") -- Ensure it renders above other frames
     frame:SetFrameLevel(50) -- Set a high level to be above child elements
     frame:Hide() -- Start hidden
 
@@ -175,10 +176,7 @@ function MainModal.updateList()
 
                 local unknown, timeElapsed, type = GetWorldElapsedTime(1)
                 if timeElapsed then
-                    local hours = math.floor(timeElapsed / 3600)
-                    local minutes = math.floor((timeElapsed % 3600) / 60)
-                    local seconds = timeElapsed % 60
-                    formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                    formattedTime = convertSecondsToString( timeElapsed )
                 end
         
                 updateRun( status, formattedTime, note )
