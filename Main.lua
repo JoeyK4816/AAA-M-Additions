@@ -34,6 +34,7 @@ function frame:OnEvent (event, arg1)
         -- Initial sort and display of the list
         MainModal.sortItems()
         MainModal.updateList()
+        playerName, playerRealm = UnitName("player")
 
         -- Register category under the AddOn section
         loadSettings()
@@ -166,39 +167,52 @@ function frame:OnEvent (event, arg1)
         end
 
         local _, subevent, _, _, sourceName, _, _, _, destName, _, _, amount, spellName, spellSchool, spellAmount = CombatLogGetCurrentEventInfo()
+        
+
 
         if subevent == "UNIT_DIED" then
-            for name in pairs(partyMembers) do
-                if destName == name then
-                    local formattedTime, timeElapsed, type = GetWorldElapsedTime(1)
-                    if timeElapsed then
-                        local hours = math.floor(timeElapsed / 3600)
-                        local minutes = math.floor((timeElapsed % 3600) / 60)
-                        local seconds = timeElapsed % 60
-                        formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
-                    end
+            if AAASettings["HideDeathMessage"] == true then
+                return
+            end
 
-                    if killerDamage[destName] then
-                        print("AAA: Death log for " .. (destName or "Unknown") .. ":")
-                        for _, combatLog in ipairs(killerDamage[destName]) do
-                            print(combatLog.message)
-                        end
-            
-                        table.insert(partyMemberDeaths, {
-                            time = formattedTime,
-                            player = destName,
-                            log = killerDamage[destName]
-                        })
+            local isPartyUnit = isPartyUnit(destName)
 
-                        killerDamage[destName] = nil
-                    else
-                        print("AAA: No recorded damage for " .. (destName or "Unknown") .. ".")
-                    end
+            if not isPartyUnit then
+                return
+            end
+
+            local formattedTime, timeElapsed, type = GetWorldElapsedTime(1)
+            if timeElapsed then
+                local hours = math.floor(timeElapsed / 3600)
+                local minutes = math.floor((timeElapsed % 3600) / 60)
+                local seconds = timeElapsed % 60
+                formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+            end
+
+            if killerDamage[destName] then
+                print("AAA: Death log for " .. (destName or "Unknown") .. ":")
+                for _, combatLog in ipairs(killerDamage[destName]) do
+                    print(combatLog.message)
                 end
+    
+                table.insert(partyMemberDeaths, {
+                    time = formattedTime,
+                    player = destName,
+                    log = killerDamage[destName]
+                })
+
+                killerDamage[destName] = nil
+            else
+                print("AAA: No recorded damage for " .. (destName or "Unknown") .. ".")
             end
         end
 
         if subevent == "SWING_DAMAGE" or subevent == "SPELL_DAMAGE" then
+            local isPartyUnit = isPartyUnit(destName)
+
+            if not isPartyUnit then
+                return
+            end
             local damageType = "Melee"
             local hitAmount
             if subevent == "SPELL_DAMAGE" then
@@ -243,3 +257,17 @@ function frame:OnEvent (event, arg1)
 end
 
 frame:SetScript("OnEvent", frame.OnEvent);
+
+if not runsDB then
+    print("AAA: No existing runs were loaded.")
+    runsDB = {}
+else
+    print("AAA: Loaded with " .. #runsDB .. " tracked runs.")
+end
+
+if not AAASettings then
+    AAASettings = {}
+    print("AAA: No existing Settings were loaded.")
+else
+    -- print("AAASettings loaded with OnlyTrackMine:" .. tostring(AAASettings["OnlyTrackMine"]) .. " status.")
+end

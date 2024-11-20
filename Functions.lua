@@ -26,28 +26,51 @@ end
 function GetPartyMemberSpecs()
     local partyMembers = {}
     local numGroupMembers = GetNumGroupMembers()
-    for i = 1, numGroupMembers + 1 do
-        local unitID = IsInRaid() and "raid" .. i or (i == numGroupMembers and "player" or "party" .. i)
-        local name = UnitName(unitID)
-        local class = UnitClass(unitID) -- Retrieves the player's class
-        local specID = GetInspectSpecialization(unitID) -- Retrieves the player's spec ID
-        local role = UnitGroupRolesAssigned(unitID) 
-        local specName
+    local isInRaid = IsInRaid()
+    
+    if numGroupMembers == 0 then
+        -- Handle the solo player case
+        local name = UnitName("player")
+        local class = UnitClass("player")
+        local specID = GetInspectSpecialization("player")
+        local specName = "Unknown"
+        local role = UnitGroupRolesAssigned("player")
         
-        if specID and specID > 0 then
-            local _, ttt = GetSpecializationInfoByID(specID)
-            specName = ttt -- Spec name, e.g., "Restoration"
-        end
-        -- table.insert(partyMembers, name)
+        specName = GetPlayerSpecName()
+        partyMembers[name] = {
+            class = class,
+            role = role,
+            spec = specName,
+        }
+    else
+        -- Handle the group case
+        for i = 1, numGroupMembers + 1 do
+            local unitID = isInRaid and "raid" .. i or (i == numGroupMembers and "player" or "party" .. i)
+            local name = UnitName(unitID)
+            local class = UnitClass(unitID)
+            local specID = GetInspectSpecialization(unitID)
+            local role = UnitGroupRolesAssigned(unitID)
+            local specName = "Unknown"
+            
+            if specID and specID > 0 then
+                local _, spec = GetSpecializationInfoByID(specID)
+                specName = spec
+            end
 
-        if name then
-            partyMembers[name] = {
-                class = class,           -- Human-readable class name
-                role = role,           -- Human-readable class name
-                spec = specName or "Unknown", -- Spec name or "Unknown" if unavailable
-            }
+            if playerName == name then
+                specName = GetPlayerSpecName()
+            end
+            
+            if name then
+                partyMembers[name] = {
+                    class = class,
+                    role = role,
+                    spec = specName,
+                }
+            end
         end
     end
+    
     return partyMembers
 end
 
@@ -287,7 +310,6 @@ function addRun(dungName, level, status, affixes, time, runDate, spec, character
     end
 
     if not character then
-        local playerName, playerRealm = UnitName("player")
         character = playerRealm and (playerName .. "-" .. playerRealm) or playerName
     end
 
@@ -298,7 +320,7 @@ function addRun(dungName, level, status, affixes, time, runDate, spec, character
         -- print(spec)
     else
         -- print(spec)
-        local specName = spec and select(2, GetSpecializationInfo(spec)) or "i make this shit up as i go"
+        local specName = spec and select(2, GetSpecializationInfo(spec))
         spec = specName
         -- print(spec)
     end
@@ -380,4 +402,13 @@ function updateRun(status, timeElapsed, note)
 
     -- If no run with the given ID was found
     print("AAA: Error: No run found with runID:", runID)
+end
+
+function isPartyUnit(unitName)
+    for name, member in pairs(partyMembers) do
+        if unitName == name then
+            return true
+        end
+    end
+    return false
 end

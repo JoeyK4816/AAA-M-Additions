@@ -3,20 +3,8 @@ partyMembers = partyMembers or {}
 partyMemberDeaths = partyMemberDeaths or {}
 AddRunModal = AddRunModal or {}
 ViewRunModal = ViewRunModal or {}
-
-if not runsDB then
-    print("AAA: No existing runs were loaded.")
-    runsDB = {}
-else
-    print("AAA: Loaded with " .. #runsDB .. " tracked runs.")
-end
-
-if not AAASettings then
-    AAASettings = {}
-    print("AAA: No existing Settings were loaded.")
-else
-    -- print("AAASettings loaded with OnlyTrackMine:" .. tostring(AAASettings["OnlyTrackMine"]) .. " status.")
-end
+runsDB = runsDB or {}
+AAASettings = AAASettings or {}
 
 -- Ensure Modal is initialized as a table
 MainModal = MainModal or {}
