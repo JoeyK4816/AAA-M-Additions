@@ -181,7 +181,7 @@ function MainModal.updateList()
                     formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
                 end
         
-                abandonRun( status, formattedTime, note )
+                updateRun( status, formattedTime, note )
 
                 MainModal.updateList()
             end)

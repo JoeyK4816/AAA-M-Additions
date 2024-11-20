@@ -8,8 +8,8 @@ SlashCmdList["AAA"] = function(msg)
     end
 end
 
-SLASH_BBB1 = "/bbb"
-SlashCmdList["BBB"] = CheckGroupStatus() -- Correctly reference the function here
+-- SLASH_BBB1 = "/bbb"
+-- SlashCmdList["BBB"] = CheckGroupStatus() -- Correctly reference the function here
 
 SLASH_CCC1 = "/ccc"
 SlashCmdList["CCC"] = function(msg)
@@ -17,7 +17,7 @@ SlashCmdList["CCC"] = function(msg)
 		Settings.OpenToCategory(MainModal.AddonName)
         -- print("OpenToCategory") -- Message if the player is the keyholder
     else
-        print("Settings Api Unavailable") -- Message if the player is the keyholder
+        print("AAA: Settings Api Unavailable") -- Message if the player is the keyholder
     end
 end
 
@@ -41,5 +41,5 @@ SlashCmdList["DDD"] = function(msg)
         formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
     end
 
-    abandonRun( status, formattedTime, note )
+    updateRun( status, formattedTime, note )
 end

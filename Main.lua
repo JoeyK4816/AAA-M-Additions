@@ -29,7 +29,7 @@ frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
 
 function frame:OnEvent (event, arg1)
     if event == "ADDON_LOADED" and arg1 == "AAA_Additions" then
-        print("AAA: M+ Additions Addon loaded! Type /AAA to view runs or /CCC to open settings.")
+        print("AAA: AAA M+ Additions Addon loaded! Type /AAA to view runs or /CCC to open settings.")
 
         -- Initial sort and display of the list
         MainModal.sortItems()
@@ -42,14 +42,10 @@ function frame:OnEvent (event, arg1)
     end
 
     if event == "PLAYER_ENTERING_WORLD" then
-        print("AAA: PLAYER_ENTERING_WORLD!")
-        if activeRunID and activeRunID > 0 then
-            print("AAA: key active!")
-        end
         if not C_ChallengeMode.IsChallengeModeActive() then
             if activeRunID and activeRunID > 0 then
-                print("AAA: Automatically abandoned key")
-                abandonRun("incomplete", _, "Automatically abandoned")
+                -- print("AAA: Automatically abandoned key")
+                updateRun("incomplete", _, "Automatically abandoned")
             end
         end
         -- this was to ensure there was always an entry to revie
@@ -112,12 +108,10 @@ function frame:OnEvent (event, arg1)
         for name in pairs(partyMembers) do
             if not currentPartyMembers[name] then
                 note = string.format("%s has left the party.", name)
-                print( "note" )
-                print( note )
             end
         end
 
-        abandonRun( status, formattedTime, note )
+        updateRun( status, formattedTime, note )
     end
 
     if event == "CHALLENGE_MODE_START" then
@@ -132,6 +126,38 @@ function frame:OnEvent (event, arg1)
         end
         partyMembers = GetPartyMemberSpecs()
         local _ = addRun()
+    end
+
+    if event == "CHALLENGE_MODE_COMPLETED" then
+        -- Retrieve details about the completed dungeon
+        local mapID, level, timeElapsed, onTime, keystoneUpgradeLevels = C_ChallengeMode.GetCompletionInfo()
+
+        -- Get dungeon name
+        local dungeonName = C_ChallengeMode.GetMapUIInfo(mapID)
+
+        -- Determine result
+        local result = onTime and "on time!" or "but not on time."
+
+        local hours = math.floor(timeElapsed / 3600)
+        local minutes = math.floor((timeElapsed % 3600) / 60)
+        local seconds = timeElapsed % 60
+        local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+
+        -- Construct chat message
+        local message = string.format(
+            "Congratulations! You completed %s (Level %d) in %s seconds %s",
+            dungeonName, level, formattedTime, result
+        )
+
+        -- Add keystone upgrades if applicable
+        if keystoneUpgradeLevels and keystoneUpgradeLevels > 0 then
+            message = message .. string.format(" Keystone upgraded by +%d!", keystoneUpgradeLevels)
+        end
+
+        -- Send the message to the chat
+        SendChatMessage(message, "PARTY")
+        
+        updateRun("timed", formattedTime, "Run Completed Successfully")
     end
 
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
@@ -213,31 +239,6 @@ function frame:OnEvent (event, arg1)
                 table.remove(killerDamage[destName], 1) -- Remove the oldest entry
             end
         end
-    end
-
-    if event == "CHALLENGE_MODE_COMPLETED" then
-        -- Retrieve details about the completed dungeon
-        local mapID, level, time, onTime, keystoneUpgradeLevels = C_ChallengeMode.GetCompletionInfo()
-
-        -- Get dungeon name
-        local dungeonName = C_ChallengeMode.GetMapUIInfo(mapID)
-
-        -- Determine result
-        local result = onTime and "on time!" or "but not on time."
-
-        -- Construct chat message
-        local message = string.format(
-            "Congratulations! You completed %s (Level %d) in %d seconds %s",
-            dungeonName, level, time, result
-        )
-
-        -- Add keystone upgrades if applicable
-        if keystoneUpgradeLevels and keystoneUpgradeLevels > 0 then
-            message = message .. string.format(" Keystone upgraded by +%d!", keystoneUpgradeLevels)
-        end
-
-        -- Send the message to the chat
-        SendChatMessage(message, "PARTY")
     end
 end
 

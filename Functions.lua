@@ -150,7 +150,7 @@ function DeleteRunByID(runID)
     for index, run in ipairs(runsDB) do
         if run.id == runID then
             table.remove(runsDB, index) -- Remove the run from the table
-            print("Run with ID " .. runID .. " has been deleted.")
+            -- print("Run with ID " .. runID .. " has been deleted.")
             return true
         end
     end
@@ -335,10 +335,10 @@ function addRun(dungName, level, status, affixes, time, runDate, spec, character
     MainModal.updateList()
 end
 
-function abandonRun(status, timeElapsed, note)
+function updateRun(status, timeElapsed, note)
     -- Ensure runID is available and valid
     if not runID then
-        print("Error: runID is not set.")
+        print("AAA: Error: runID is not set.")
         return
     end
 
@@ -371,7 +371,7 @@ function abandonRun(status, timeElapsed, note)
             run.currentTimer = timeElapsed or run.currentTimer
             run.note = note or run.note
             run.deaths = partyMemberDeaths or run.deaths
-            print("Run updated successfully.")
+            -- print("Run updated successfully.")
             partyMemberDeaths = {}
             activeRunID = nil
             return
@@ -379,5 +379,5 @@ function abandonRun(status, timeElapsed, note)
     end
 
     -- If no run with the given ID was found
-    print("Error: No run found with runID:", runID)
+    print("AAA: Error: No run found with runID:", runID)
 end
