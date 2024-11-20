@@ -17,6 +17,7 @@ Init.lua
 
 Functions.lua
 Settings.lua
+Modals/EditModal.lua
 Modals/Main.lua
 Modals/Popup.lua
 Modals/AddRun.lua

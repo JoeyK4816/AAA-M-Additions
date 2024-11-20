@@ -409,7 +409,6 @@ function isPartyUnit(unitName)
     return false
 end
 
-
 function removeRun(removeID)
     -- Ensure runID is available and valid
     if not removeID then

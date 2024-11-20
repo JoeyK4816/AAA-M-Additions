@@ -10,6 +10,20 @@ function ViewRunModal.Create(parentFrame, addItemCallback, runID)
     modalFrame.title:SetPoint("TOP", modalFrame, "TOP", 0, -5)
     modalFrame.title:SetText("Run Details")
 
+    -- Scroll Frame for Details Text
+    local scrollFrame = CreateFrame("ScrollFrame", nil, modalFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetSize(520, 300)
+    scrollFrame:SetPoint("TOP", modalFrame, "TOP", 0, -40)
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetSize(500, 1) -- Width should match the modal content
+    scrollFrame:SetScrollChild(content)
+
+    local detailsTextBox = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    detailsTextBox:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+    detailsTextBox:SetWidth(500) -- Ensure text wraps within the scroll frame width
+    detailsTextBox:SetJustifyH("LEFT")
+
     -- Retrieve the run data using the runID
     local run = GetRunByID(runID)
 
@@ -82,11 +96,29 @@ function ViewRunModal.Create(parentFrame, addItemCallback, runID)
             detailsText = detailsText .. "  No death data available\n"
         end
 
-        modalFrame.details = modalFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        modalFrame.details:SetPoint("TOPLEFT", modalFrame, "TOPLEFT", 10, -40)
-        modalFrame.details:SetJustifyH("LEFT")
-        modalFrame.details:SetWidth(500 ) -- Ensure text wraps within the modal width
-        modalFrame.details:SetText(detailsText)
+        detailsTextBox:SetText(detailsText)
+
+        -- Buttons
+        local deleteButton = CreateFrame("Button", nil, modalFrame, "GameMenuButtonTemplate")
+        deleteButton:SetPoint("BOTTOMRIGHT", modalFrame, "BOTTOM", -5, 10)
+        deleteButton:SetSize(100, 30)
+        deleteButton:SetText("Delete")
+        deleteButton:SetScript("OnClick", function()
+            DeleteRunByID(runID)
+            MainModal.updateList()
+        end)
+
+        local editButton = CreateFrame("Button", nil, modalFrame, "GameMenuButtonTemplate")
+        editButton:SetPoint("BOTTOMLEFT", modalFrame, "BOTTOM", 5, 10)
+        editButton:SetSize(100, 30)
+        editButton:SetText("Edit")
+        editButton:SetScript("OnClick", function()
+            local editModal = EditRunModal.Create( modalFrame, runID )
+            if editModal then
+                editModal:Show()
+            end
+        end)
+
     else
         -- Handle case where no run data is found
         modalFrame.details = modalFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

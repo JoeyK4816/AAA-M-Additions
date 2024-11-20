@@ -3,6 +3,7 @@ partyMembers = partyMembers or {}
 partyMemberDeaths = partyMemberDeaths or {}
 AddRunModal = AddRunModal or {}
 ViewRunModal = ViewRunModal or {}
+EditRunModal = EditRunModal or {}
 runsDB = runsDB or {}
 AAASettings = AAASettings or {}
 
@@ -13,6 +14,8 @@ MainModal.sortColumn = "dungeonName"
 MainModal.sortAscending = true
 MainModal.currentTab = "Timed" -- Default tab
 MainModal.AddonName = "AAA M+ Additions"
+MainModal.currentPage = 1
+MainModal.itemsPerPage = 10 -- Number of items to display per page
 
 -- Register your settings category under the "AddOns" section
 category = Settings.RegisterVerticalLayoutCategory(MainModal.AddonName)

@@ -15,6 +15,7 @@ function MainModal.Create()
 
     -- Create tab buttons
     MainModal.CreateTabs(frame)
+    MainModal.prevPageButton, MainModal.nextPageButton = MainModal.CreatePagination(frame)
 
     return frame
 end
@@ -77,6 +78,37 @@ function MainModal.CreateList()
     return listFrame
 end
 
+function MainModal.CreatePagination(frame)
+    -- Create pagination buttons
+    local prevPageButton = CreateFrame("Button", nil, frame, "GameMenuButtonTemplate")
+    prevPageButton:SetSize(80, 25)
+    prevPageButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 10)
+    prevPageButton:SetText("Previous")
+    prevPageButton:SetScript("OnClick", function()
+        if MainModal.currentPage > 1 then
+            MainModal.currentPage = MainModal.currentPage - 1
+            MainModal.updateList()
+        end
+    end)
+
+    local nextPageButton = CreateFrame("Button", nil, frame, "GameMenuButtonTemplate")
+    nextPageButton:SetSize(80, 25)
+    nextPageButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
+    nextPageButton:SetText("Next")
+    nextPageButton:SetScript("OnClick", function()
+        local filteredRuns = MainModal.filterRunsByTab()
+        local totalPages = math.ceil(#filteredRuns / MainModal.itemsPerPage)
+        if MainModal.currentPage < totalPages then
+            MainModal.currentPage = MainModal.currentPage + 1
+            MainModal.updateList()
+        end
+    end)
+    prevPageButton:Hide()
+    nextPageButton:Hide()
+
+    return prevPageButton, nextPageButton
+end
+
 function MainModal.sortItems()
     if not runsDB then
         return
@@ -105,6 +137,12 @@ function MainModal.sortItems()
 end
 
 function MainModal.updateList()
+    if MainModal.currentPage == 1 then
+        MainModal.prevPageButton:Hide()
+    else
+        MainModal.prevPageButton:Show()
+    end
+
     -- Clear existing rows
     if listFrame.rows then
         for _, row in ipairs(listFrame.rows) do
@@ -117,7 +155,17 @@ function MainModal.updateList()
     -- Generate list rows based on the selected tab
     listFrame.rows = {}
     local filteredRuns = MainModal.filterRunsByTab()
-    for i, item in ipairs(filteredRuns) do
+    local startIndex = (MainModal.currentPage - 1) * MainModal.itemsPerPage + 1
+    local endIndex = math.min(startIndex + MainModal.itemsPerPage - 1, #filteredRuns)
+
+    if endIndex >= #filteredRuns then
+        MainModal.nextPageButton:Hide()
+    else
+        MainModal.nextPageButton:Show()
+    end
+
+    for i = startIndex, endIndex do
+        local item = filteredRuns[i]
         local row = {}
 
         -- Name column
