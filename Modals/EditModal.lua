@@ -1,12 +1,12 @@
-function EditRunModal.Create(parentFrame, runID)
+function EditRunModal.Create(parentFrame, runID, detailsTextBox)
     -- Get the run data
     local runData = GetRunByID(runID)
     if not runData then
         print("AAA: Error: No run found with runID:", runID)
         return nil
     end
-    PrintTable(runData)
-    print(runData.note)
+    -- PrintTable(runData)
+    -- print(runData.note)
 
     -- Create the modal frame
     local modalFrame = CreateFrame("Frame", nil, parentFrame, "BasicFrameTemplateWithInset")
@@ -20,14 +20,23 @@ function EditRunModal.Create(parentFrame, runID)
     title:SetPoint("TOP", modalFrame, "TOP", 0, -5)
     title:SetText("Edit Run")
 
+    -- Create a scrollable container for the edit box
+    local scrollFrame = CreateFrame("ScrollFrame", nil, modalFrame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetSize(360, 200)
+    scrollFrame:SetPoint("TOP", modalFrame, "TOP", 0, -40)
+
     -- Add a text field for editing notes
-    local notesBox = CreateFrame("EditBox", nil, modalFrame, "InputBoxTemplate")
+    local notesBox = CreateFrame("EditBox", nil, scrollFrame)
     notesBox:SetMultiLine(true)
-    notesBox:SetSize(360, 200)
-    notesBox:SetPoint("TOP", modalFrame, "TOP", 0, -40)
+    notesBox:SetSize(340, 600) -- Allow space for scrolling
+    notesBox:SetPoint("TOPLEFT")
+    notesBox:SetPoint("TOPRIGHT")
     notesBox:SetText(runData.note or "")
     notesBox:SetAutoFocus(false) -- Prevent auto-focus
+    notesBox:SetFontObject("GameFontHighlight")
     notesBox:SetMaxLetters(1000)
+
+    scrollFrame:SetScrollChild(notesBox)
 
     -- Add a Save button
     local saveButton = CreateFrame("Button", nil, modalFrame, "GameMenuButtonTemplate")
@@ -39,6 +48,8 @@ function EditRunModal.Create(parentFrame, runID)
         for _, run in ipairs(runsDB) do
             if run.id == runID then
                 run.note = notesBox:GetText()
+                local detailsText = ViewRunModal.GetDetails( run )
+                detailsTextBox:SetText(detailsText)
                 print("AAA: Notes updated for Run ID:", runID)
                 break
             end

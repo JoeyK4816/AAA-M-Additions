@@ -23,6 +23,7 @@ end
 
 SLASH_DDD1 = "/ddd"
 SlashCmdList["DDD"] = function(msg)
-    local st = GetPartyMemberSpecs()
-    PrintTable( st )
+    -- local formattedTime = convertSecondsToString( '444' )
+    -- -- PrintTable( st )
+    -- print( formattedTime )
 end

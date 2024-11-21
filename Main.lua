@@ -108,6 +108,7 @@ function frame:OnEvent (event, arg1)
 
         -- Determine result
         local result = onTime and "on time!" or "but not on time."
+        timeElapsed = timeElapsed / 1000 -- account for milliseconds
         local formattedTime = convertSecondsToString( timeElapsed )
 
         -- Construct chat message

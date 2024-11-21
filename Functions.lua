@@ -173,7 +173,7 @@ function DeleteRunByID(runID)
     for index, run in ipairs(runsDB) do
         if run.id == runID then
             table.remove(runsDB, index) -- Remove the run from the table
-            -- print("Run with ID " .. runID .. " has been deleted.")
+            MainModal.updateList()
             return true
         end
     end
