@@ -2,7 +2,7 @@ function MainModal.Create()
     local frame = CreateFrame("Frame", "AAA_AdditionsFrame", UIParent, "BasicFrameTemplateWithInset")
 
     -- Create the main frame
-    frame:SetSize(600, 600) -- Adjusted height for tabs
+    frame:SetSize(800, 600) -- Adjusted height for tabs
     frame:SetPoint("CENTER", UIParent, "CENTER") -- Position in the center of the screen
     frame:SetFrameStrata("DIALOG") -- Ensure it renders above other frames
     frame:SetFrameLevel(50) -- Set a high level to be above child elements
@@ -14,50 +14,173 @@ function MainModal.Create()
     frame.title:SetText(MainModal.AddonName)
 
     -- Create tab buttons
-    MainModal.CreateTabs(frame)
+    MainModal.CreateFilterUI(frame)
     MainModal.prevPageButton, MainModal.nextPageButton = MainModal.CreatePagination(frame)
 
     return frame
 end
 
-function MainModal.CreateTabs(frame)
-    -- Create container for tabs
-    frame.tabs = {}
+function MainModal.CreateFilterUI(frame)
+    -- Statuses Dropdown
+    local dropdown = CreateFrame("Frame", "FilterDropdown", frame, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -30)
+    UIDropDownMenu_SetWidth(dropdown, 150) -- Set dropdown width
+    UIDropDownMenu_SetText(dropdown, "All Statuses") -- Default value
+    local items = { "All Statuses", "Timed", "Un-Timed", "Incomplete", "Started" }
+    UIDropDownMenu_Initialize(dropdown, function(self, level, menuList)
+        local info = UIDropDownMenu_CreateInfo()
+        for _, item in ipairs(items) do
+            info.text = item
+            info.checked = (item == UIDropDownMenu_GetText(dropdown))
+            info.func = function()
+                UIDropDownMenu_SetText(dropdown, item)
+                MainModal.currentStatusFilter = item
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
 
-    local tabs = { "Timed", "Un-Timed", "Incomplete", "Started" }
-    local tabWidth = 80
-    local tabHeight = 22
-    local tabSpacing = 10 -- Space between tabs
-    local totalWidth = (#tabs * tabWidth) + ((#tabs - 1) * tabSpacing)
-    local startX = (frame:GetWidth() - totalWidth) / 2 -- Center the tabs horizontally
+    -- Levels Dropdown
+    local dropdown = CreateFrame("Frame", "FilterDropdown", frame, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", frame, "TOPLEFT", 190, -30)
+    UIDropDownMenu_SetWidth(dropdown, 150) -- Set dropdown width
+    UIDropDownMenu_SetText(dropdown, "All Levels") -- Default value
+    local items = { "All Levels", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19" }
+    UIDropDownMenu_Initialize(dropdown, function(self, level, menuList)
+        local info = UIDropDownMenu_CreateInfo()
+        for _, item in ipairs(items) do
+            info.text = item
+            info.checked = (item == UIDropDownMenu_GetText(dropdown))
+            info.func = function()
+                UIDropDownMenu_SetText(dropdown, item)
+                MainModal.currentLevelFilter = item
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
 
-    for i, tabName in ipairs(tabs) do
-        local tab = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        tab:SetSize(tabWidth, tabHeight)
-        tab:SetPoint("TOPLEFT", frame, "TOPLEFT", startX + (i - 1) * (tabWidth + tabSpacing), -30)
-        tab:SetText(tabName)
+    -- Roles Dropdown
+    local dropdown = CreateFrame("Frame", "FilterDropdown", frame, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -65)
+    UIDropDownMenu_SetWidth(dropdown, 150) -- Set dropdown width
+    UIDropDownMenu_SetText(dropdown, "All Roles") -- Default value
 
-        tab:SetScript("OnClick", function()
-            MainModal.currentTab = tabName
-            MainModal.updateList()
-        end)
+    -- Map display names to internal role values
+    local items = {
+        { display = "All Roles", value = nil },
+        { display = "Dps", value = "DAMAGER" },
+        { display = "Healer", value = "HEALER" },
+        { display = "Tank", value = "TANK" }
+    }
 
-        frame.tabs[tabName] = tab
-    end
+    UIDropDownMenu_Initialize(dropdown, function(self, level, menuList)
+        local info = UIDropDownMenu_CreateInfo()
+        for _, item in ipairs(items) do
+            info.text = item.display
+            info.checked = (item.value == MainModal.currentRoleFilter)
+            info.func = function()
+                UIDropDownMenu_SetText(dropdown, item.display)
+                MainModal.currentRoleFilter = item.value
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    -- Dungeons Dropdown
+    local dropdown = CreateFrame("Frame", "FilterDropdown", frame, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", frame, "TOPLEFT", 190, -65)
+    UIDropDownMenu_SetWidth(dropdown, 150) -- Set dropdown width
+    UIDropDownMenu_SetText(dropdown, "All Dungeons") -- Default value
+    UIDropDownMenu_Initialize(dropdown, function(self, level, menuList)
+
+
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = "All Dungeons"
+        info.arg1 = "All Dungeons"
+        info.func = function()
+            UIDropDownMenu_SetText(dropdown, "All Dungeons")
+            MainModal.currentDungeonFilter = "All Dungeons"
+        end
+        UIDropDownMenu_AddButton(info)
+
+
+        local chestTimeInfo = GetMythicPlusChestTimes()
+        for mapID, dung in pairs(chestTimeInfo) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = dung.name
+            info.arg1 = mapID
+            info.func = function()
+                UIDropDownMenu_SetText(dropdown, dung.name)
+                MainModal.currentDungeonFilter = mapID
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    -- Filter button
+    local filterButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    filterButton:SetSize(80, 22)
+    filterButton:SetText("Filter")
+    filterButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -15, -35)
+    filterButton:SetScript("OnClick", function()
+        MainModal.updateList()
+    end)
+
+    -- Checkbox
+    local checkbox = CreateFrame("CheckButton", "OnlyShowCharacterCheckbox", frame, "UICheckButtonTemplate")
+    checkbox:SetPoint("TOPRIGHT", filterButton, "TOPLEFT", 0, 5)
+    checkbox.text = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    checkbox.text:SetPoint("RIGHT", checkbox, "LEFT", 0, 0)
+    checkbox.text:SetText("Only show this character")
+    checkbox:SetScript("OnClick", function(self)
+        MainModal.onlyShowThisCharacter = self:GetChecked()
+        MainModal.updateList()
+    end)
 end
+
+-- function MainModal.CreateTabs(frame)
+--     -- Create container for tabs
+--     frame.tabs = {}
+
+--     local tabs = { "Timed", "Un-Timed", "Incomplete", "Started" }
+--     local tabWidth = 80
+--     local tabHeight = 22
+--     local tabSpacing = 10 -- Space between tabs
+--     local totalWidth = (#tabs * tabWidth) + ((#tabs - 1) * tabSpacing)
+--     local startX = (frame:GetWidth() - totalWidth) / 2 -- Center the tabs horizontally
+
+--     for i, tabName in ipairs(tabs) do
+--         local tab = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+--         tab:SetSize(tabWidth, tabHeight)
+--         tab:SetPoint("TOPLEFT", frame, "TOPLEFT", startX + (i - 1) * (tabWidth + tabSpacing), -30)
+--         tab:SetText(tabName)
+
+--         tab:SetScript("OnClick", function()
+--             MainModal.currentTab = tabName
+--             MainModal.updateList()
+--         end)
+
+--         frame.tabs[tabName] = tab
+--     end
+-- end
 
 function MainModal.CreateList()
     -- Create a container for the list
+    local currentWidth = 0
     local listFrame = CreateFrame("Frame", nil, frame)
-    listFrame:SetSize(360, 150) -- Adjust size for content
-    listFrame:SetPoint("TOP", frame, "TOP", -60, -60)
+    listFrame:SetSize(750, 450) -- Adjust size for content
+    listFrame:SetPoint("TOP", frame, "TOP", 0, -100)
 
     -- Add column headers with sorting functionality
-    for i, headerData in ipairs(MainModal.listHeaders) do
-        local headerText, column = unpack(headerData)
+
+    for _, column in ipairs(MainModal.listHeaders.order) do
+        local headerData = MainModal.listHeaders.data[column]
+        local width = headerData.width
+        local headerText = headerData.prettyName
         local header = CreateFrame("Button", nil, listFrame)
-        header:SetSize(100, 20) -- Width, Height
-        header:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 10 + (i - 1) * 120, 0)
+        header:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentWidth, 0)
+        header:SetSize(width, 20) -- Width, Height
+        currentWidth = currentWidth + width
 
         header.text = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         header.text:SetText(headerText)
@@ -96,7 +219,7 @@ function MainModal.CreatePagination(frame)
     nextPageButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
     nextPageButton:SetText("Next")
     nextPageButton:SetScript("OnClick", function()
-        local filteredRuns = MainModal.filterRunsByTab()
+        local filteredRuns = MainModal.filterRuns()
         local totalPages = math.ceil(#filteredRuns / MainModal.itemsPerPage)
         if MainModal.currentPage < totalPages then
             MainModal.currentPage = MainModal.currentPage + 1
@@ -154,7 +277,7 @@ function MainModal.updateList()
 
     -- Generate list rows based on the selected tab
     listFrame.rows = {}
-    local filteredRuns = MainModal.filterRunsByTab()
+    local filteredRuns = MainModal.filterRuns()
     local startIndex = (MainModal.currentPage - 1) * MainModal.itemsPerPage + 1
     local endIndex = math.min(startIndex + MainModal.itemsPerPage - 1, #filteredRuns)
 
@@ -167,33 +290,78 @@ function MainModal.updateList()
     for i = startIndex, endIndex do
         local item = filteredRuns[i]
         local row = {}
+        local dungeonName = GetDungeonNameByMapID(item.dungeonName)
+        local currentX = 0
 
         -- Name column
         local name = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        local dungeonName = GetDungeonNameByMapID(item.dungeonName)
+        local nameHeader = MainModal.listHeaders.data['dungeonName']
         name:SetText(dungeonName)
-        name:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 0, -20 - (i - 1) * 30)
+        name:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 0, -25 - (i - 1) * 30)
+        currentX = currentX + nameHeader.width
         table.insert(row, name)
 
         -- Time column
         local time = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        local timeHeader = MainModal.listHeaders.data["currentTimer"]
         time:SetText(item.currentTimer)
-        time:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 130, -20 - (i - 1) * 30)
+        time:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -25 - (i - 1) * 30)
+        time:SetWidth( timeHeader.width )
+        time:SetJustifyH("CENTER")
+        currentX = currentX + timeHeader.width
         table.insert(row, time)
 
         -- Date column
         local runDate = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        runDate:SetText(item.runDate)
-        runDate:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 250, -20 - (i - 1) * 30)
+        local runDateHeader = MainModal.listHeaders.data["runDate"]
+        local dateOnly = string.match(item.runDate, "^%d%d%d%d%-%d%d%-%d%d")
+        runDate:SetText( dateOnly)
+        runDate:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -25 - (i - 1) * 30)
+        runDate:SetWidth( runDateHeader.width )
+        runDate:SetJustifyH("CENTER")
+        currentX = currentX + runDateHeader.width
         table.insert(row, runDate)
+
+        -- Status column
+        local status = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        local statusHeader = MainModal.listHeaders.data["status"]
+        local prettyStatus = GetPrettyStatus(item.status)
+        status:SetText(prettyStatus)
+        status:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -25 - (i - 1) * 30)
+        status:SetWidth( statusHeader.width )
+        status:SetJustifyH("CENTER")
+        currentX = currentX + statusHeader.width
+        table.insert(row, status)
+
+        -- Level column
+        local level = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        local levelHeader = MainModal.listHeaders.data["level"]
+        level:SetText(item.level)
+        level:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -25 - (i - 1) * 30)
+        level:SetWidth( levelHeader.width )
+        level:SetJustifyH("CENTER")
+        currentX = currentX + levelHeader.width
+        table.insert(row, level)
+
+        -- Role column
+        local role = listFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        local roleHeader = MainModal.listHeaders.data["role"]
+        local prettyRole = GetPrettyRole(item.role)
+        role:SetText(prettyRole)
+        role:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -25 - (i - 1) * 30)
+        role:SetWidth( roleHeader.width )
+        role:SetJustifyH("CENTER")
+        currentX = currentX + roleHeader.width
+        table.insert(row, role)
 
         -- View button
         local viewButton = CreateFrame("Button", nil, listFrame, "UIPanelButtonTemplate")
+        local viewHeader = MainModal.listHeaders.data["view"]
         viewButton:SetSize(50, 20) -- Width, Height
-        viewButton:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 390, -17 - (i - 1) * 30)
+        viewButton:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -22 - (i - 1) * 30)
+        currentX = currentX + viewHeader.width
         viewButton:SetText("View")
         viewButton:SetScript("OnClick", function()
-            -- print("Viewing run:", item.name)
             local modalFrame = ViewRunModal.Create(frame, addRun, item.id)
             modalFrame:Show()
         end)
@@ -201,8 +369,10 @@ function MainModal.updateList()
 
         -- Delete button
         local deleteButton = CreateFrame("Button", nil, listFrame, "UIPanelButtonTemplate")
+        local deleteHeader = MainModal.listHeaders.data["delete"]
         deleteButton:SetSize(50, 20)
-        deleteButton:SetPoint("TOPLEFT", listFrame, "TOPLEFT", 450, -17 - (i - 1) * 30)
+        deleteButton:SetPoint("TOPLEFT", listFrame, "TOPLEFT", currentX, -22 - (i - 1) * 30)
+        currentX = currentX + deleteHeader.width
         deleteButton:SetText("Delete")
         deleteButton:SetScript("OnClick", function()
             DeleteRunByID(item.id)
@@ -237,18 +407,22 @@ function MainModal.updateList()
     end
 end
 
-function MainModal.filterRunsByTab()
-    local tab = MainModal.currentTab
+function MainModal.filterRuns()
     local filtered = {}
+    local statusFilter = MainModal.currentStatusFilter or "All Statuses"
+    local levelFilter = MainModal.currentLevelFilter or "All Levels"
+    local dungeonFilter = MainModal.currentDungeonFilter or "All Dungeons"
+    local roleFilter = MainModal.currentRoleFilter or "All Roles"
+    local onlyShowThisCharacter = MainModal.onlyShowThisCharacter
 
     for _, run in ipairs(runsDB or {}) do
-        if tab == "Timed" and run.status == "timed" then
-            table.insert(filtered, run)
-        elseif tab == "Un-Timed" and run.status == "complete" then
-            table.insert(filtered, run)
-        elseif tab == "Started" and run.status == "started" then
-            table.insert(filtered, run)
-        elseif tab == "Incomplete" and run.status == "incomplete" then
+        local matchesStatus = (statusFilter == "All Statuses" or run.status == statusFilter:lower())
+        local matchesLevel = (levelFilter == "All Levels" or tostring(run.level) == levelFilter)
+        local matchesDungeon = (dungeonFilter == "All Dungeons" or run.dungeonName == dungeonFilter)
+        local matchesRole = (roleFilter == "All Roles" or run.role == roleFilter)
+        local matchesCharacter = (not onlyShowThisCharacter or run.character == UnitName("player"))
+
+        if matchesStatus and matchesLevel and matchesDungeon and matchesRole and matchesCharacter then
             table.insert(filtered, run)
         end
     end

@@ -430,3 +430,44 @@ function convertSecondsToString( timeInSeconds )
     local formattedTime = string.format("%02d:%02d:%02d", hours, minutes, seconds)
     return formattedTime
 end
+
+function GetPrettyRole(role)
+    local roleMap = {
+        DAMAGER = "Dps",
+        TANK = "Tank",
+        HEALER = "Healer"
+    }
+    return roleMap[role] or "Unknown" -- Return "Unknown" for unexpected roles
+end
+
+function GetPrettyStatus(status)
+    local statusMap = {
+        timed = "Timed",
+        complete = "Un-Timed",
+        started = "Started",
+        incomplete = "Incomplete"
+    }
+    return statusMap[status] or "Unknown" -- Return "Unknown" for unexpected statuses
+end
+
+function GetMythicPlusChestTimes()
+    local dungeons = C_ChallengeMode.GetMapTable()
+    local chestTimes = {}
+
+    for _, mapID in ipairs(dungeons) do
+        local name, _, timeLimit = C_ChallengeMode.GetMapUIInfo(mapID)
+        if name and timeLimit then
+            local twoChestTime = math.floor(timeLimit * 0.6) -- 60% of the base time
+            local threeChestTime = math.floor(timeLimit * 0.4) -- 40% of the base time
+
+            chestTimes[mapID] = {
+                name = name,
+                timeLimit = timeLimit,
+                twoChest = twoChestTime,
+                threeChest = threeChestTime,
+            }
+        end
+    end
+
+    return chestTimes
+end
